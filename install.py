@@ -9,6 +9,8 @@ import shutil
 import tempfile
 import tomllib
 
+import tomlkit
+
 REPO = Path(__file__).resolve().parent
 
 
@@ -25,6 +27,28 @@ def install(home, dry=False):
     hooks_path = home / ".codex/hooks.json"
     hooks = json.loads(hooks_path.read_text()) if hooks_path.exists() else {}
     hook_defaults = json.loads((REPO / "codex/hooks.json").read_text())["hooks"]
+
+    additions = "".join(f"{key} = {json.dumps(value)}\n" for key, value in defaults.items() if key not in config)
+    config = tomlkit.parse(additions + original)
+    codex_servers = {}
+    for name, server in servers.items():
+        codex_servers[name] = {key: server[key] for key in ("command", "args", "url", "env") if key in server}
+        if "timeout" in server:
+            codex_servers[name]["tool_timeout_sec"] = server["timeout"] / 1000
+    # Replace repo-owned servers in both clients; retain local-only servers.
+    for document, key, definitions in (
+        (config, "mcp_servers", codex_servers),
+        (claude, "mcpServers", servers),
+    ):
+        current = document.setdefault(key, {})
+        changed = {name: server for name, server in definitions.items() if current.get(name) != server}
+        # Remove old tables before adding any, preserving TOML dotted-key scopes.
+        for name in changed:
+            current.pop(name, None)
+        current.update(changed)
+    merged = tomlkit.dumps(config)
+    if tomllib.loads(merged) != config.unwrap():
+        raise ValueError("TOML serialization changed settings")
 
     def save(path, move=False):
         dest = backup / path.relative_to(home)
@@ -104,27 +128,8 @@ def install(home, dry=False):
             if not dry:
                 save(legacy, move=True)
 
-    additions = "".join(f"{key} = {json.dumps(value)}\n" for key, value in defaults.items() if key not in config)
-    # Only add absent public MCP definitions; existing auth and per-machine overrides win.
-    mcp_text = ""
-    for name, server in servers.items():
-        if name in config.get("mcp_servers", {}):
-            continue
-        mcp_text += f"\n[mcp_servers.{json.dumps(name)}]\n"
-        for key in ("command", "args", "url"):
-            if key in server:
-                mcp_text += f"{key} = {json.dumps(server[key])}\n"
-        if "timeout" in server:
-            mcp_text += f"tool_timeout_sec = {server['timeout'] / 1000}\n"
-        if server.get("env"):
-            mcp_text += f"[mcp_servers.{json.dumps(name)}.env]\n"
-            mcp_text += "".join(f"{json.dumps(k)} = {json.dumps(v)}\n" for k, v in server["env"].items())
-    merged = additions + original + "\n" + mcp_text if additions or mcp_text else original
-    tomllib.loads(merged)
     write(config_path, merged)
 
-    # Repo definitions win for Claude; servers not in the repo (e.g. with tokens) are kept.
-    claude.setdefault("mcpServers", {}).update(servers)
     if not claude_path.exists() or claude != json.loads(claude_path.read_text()):
         write(claude_path, json.dumps(claude, indent=2, ensure_ascii=False) + "\n")
 

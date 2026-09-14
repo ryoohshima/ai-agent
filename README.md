@@ -8,7 +8,7 @@ shared/
   rules/                コーディング・Git ガイドライン
   skills/               両エージェントで使うスキル
   hooks/                lessons.md の読み込み・更新リマインダー
-  mcp-servers.json       認証情報を含まない MCP の初期定義
+  mcp-servers.json       認証情報を含まない MCP の同期元
 claude/
   CLAUDE.md             共通指示の読み込みと Claude 固有指示
   settings.json         Claude の設定・権限・プラグイン・フック
@@ -24,12 +24,12 @@ install.sh / install.py
 
 ## セットアップ
 
-Python 3.11 以降が必要です。`~/.claude` と `~/.codex` は実ディレクトリとして使います。
+Python 3.11 以降と `uv` が必要です。`install.sh` は `tomlkit` を隔離環境へ用意します。`~/.claude` と `~/.codex` は実ディレクトリとして使います。
 
 ```sh
 ./install.sh -n          # 変更内容の確認
 ./install.sh             # 設定を配置
-python3 test_install.py   # 仮の HOME で検証
+uv run --no-project --with-requirements requirements.txt python3 test_install.py # 仮の HOME で検証
 ```
 
 既存のファイル・同名スキルは `~/.local/state/ai-agent/install-<日時>/` へバックアップします。
@@ -39,7 +39,8 @@ python3 test_install.py   # 仮の HOME で検証
 
 - 共通指示・ルール・スキル・フックのスクリプトは `shared/` を編集します。リンク経由で両方に反映されます。指示は新しいセッションで読み直してください。
 - Claude の設定は `claude/` を編集します。マシン固有の上書きは Git 管理外の `~/.claude/settings.local.json` に置きます。
-- Codex のモデル・認証付き MCP・アプリ連携は `~/.codex/config.toml` に保持します。リポジトリの `codex/config.toml` と MCP 定義は未設定項目だけを補う初期値です。既存値の変更・削除はローカル設定で行います。
+- MCP は両エージェントとも `shared/mcp-servers.json` を正とし、`./install.sh` で同名サーバーの定義全体を上書きします。定義内で削除した項目も反映します。リポジトリにないサーバーは保持するため、サーバー自体を削除する場合はローカル設定からも削除します。認証情報はリポジトリに含めません。
+- Codex のモデル・アプリ連携など MCP 以外の既存設定は保持します。`codex/config.toml` は未設定項目だけを補う初期値です。
 - `codex/hooks.json` はインストール時に既存フックへ重複なく追記します。定義を変更・削除した場合は `~/.codex/hooks.json` の古い定義も調整します。新しいフックは Codex CLI の `/hooks` で確認・信頼してください。既存の Orca / Superset 連携は保持します。
 - 新しいスキル・ルール・フックスクリプトの追加後は `./install.sh` を再実行します。アプリ管理の `computer-use` / `orchestration` / `orca-cli` やプラグインは各アプリ側で管理します。
 

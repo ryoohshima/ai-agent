@@ -1,4 +1,4 @@
-"""Run with python3 test_install.py; never touches the real home directory."""
+"""Run with uv run --no-project --with-requirements requirements.txt python3 test_install.py; never touches the real home directory."""
 from contextlib import redirect_stdout
 import io
 import json
@@ -16,12 +16,25 @@ with TemporaryDirectory(prefix="ai-agent-check-") as directory:
     (home / ".claude").mkdir()
     (home / ".codex/skills/git-commit/local.txt").write_text("legacy skill")
     (home / ".agents/skills/git-commit/local.txt").write_text("custom skill")
-    config = '# keep this comment\n[mcp_servers.context7]\nurl = "https://local.example/mcp"\n'
+    config = '''# keep this comment
+model = "local-model"
+[mcp_servers.context7]
+command = "stale-command"
+args = ["stale"]
+url = "https://local.example/mcp"
+enabled = false
+[mcp_servers.context7.env]
+OLD = "remove-me"
+[mcp_servers.private]
+command = "private-server" # keep private comment
+[profiles.local]
+model = "profile-model"
+'''
     (home / ".codex/config.toml").write_text(config)
     (home / ".codex/auth.json").write_text("local auth sentinel")
     (home / ".claude/history.jsonl").write_text("history sentinel")
     (home / ".claude/settings.local.json").write_text('{"local": true}')
-    (home / ".claude.json").write_text('{"local": true, "mcpServers": {"private": {"command": "private-server"}, "context7": {"url": "stale"}}}')
+    (home / ".claude.json").write_text('{"local": true, "mcpServers": {"private": {"command": "private-server"}, "context7": {"url": "stale", "env": {"OLD": "remove-me"}, "command": "stale-command"}}}')
     existing_hook = {"hooks": [{"type": "command", "command": "echo external-hook"}]}
     (home / ".codex/hooks.json").write_text(json.dumps({"hooks": {"Stop": [existing_hook]}}))
     before = {p.relative_to(home): p.read_bytes() for p in home.rglob("*") if p.is_file()}
@@ -42,10 +55,16 @@ with TemporaryDirectory(prefix="ai-agent-check-") as directory:
     for name in (".codex/auth.json", ".claude/history.jsonl", ".claude/settings.local.json"):
         assert (home / name).read_bytes() == before[Path(name)]
     result = tomllib.loads((home / ".codex/config.toml").read_text())
-    assert result["mcp_servers"]["context7"]["url"] == "https://local.example/mcp"
+    assert result["mcp_servers"]["context7"] == {"url": "https://mcp.context7.com/mcp"}
+    assert result["mcp_servers"]["private"] == {"command": "private-server"}
+    assert result["model"] == "local-model"
+    assert result["profiles"]["local"]["model"] == "profile-model"
     assert result["mcp_servers"]["agenttakt"]["tool_timeout_sec"] == 1800
     assert result["project_doc_fallback_filenames"] == ["CLAUDE.md"]
-    assert config in (home / ".codex/config.toml").read_text()
+    rendered = (home / ".codex/config.toml").read_text()
+    assert "# keep this comment" in rendered
+    assert 'command = "private-server" # keep private comment' in rendered
+    assert (saved[0] / ".codex/config.toml").read_text() == config
     claude_servers = json.loads((home / ".claude.json").read_text())["mcpServers"]
     assert claude_servers["private"]["command"] == "private-server"
     assert claude_servers["context7"] == json.loads((REPO / "shared/mcp-servers.json").read_text())["mcpServers"]["context7"]
@@ -54,6 +73,26 @@ with TemporaryDirectory(prefix="ai-agent-check-") as directory:
     with redirect_stdout(output):
         install(home)
     assert not output.getvalue(), output.getvalue()
+    # Valid TOML representations must all replace the entire owned server.
+    for index, source in enumerate((
+        'mcp_servers = {context7 = {url = "stale", env = {OLD = "old"}}, private = {command = "private-server"}}\n',
+        'mcp_servers.context7.url = "stale"\nmcp_servers.context7.env.OLD = "old"\nmcp_servers.private.command = "private-server"\n',
+        '[mcp_servers."context7".env]\nOLD = "old"\n[mcp_servers.private]\ncommand = "private-server"\n[mcp_servers."context7"]\nurl = "stale"\n',
+    )):
+        alternate = home / f"representation-{index}"
+        (alternate / ".codex").mkdir(parents=True)
+        target = alternate / ".codex/config.toml"
+        target.write_text(source)
+        with redirect_stdout(io.StringIO()):
+            install(alternate)
+        parsed = tomllib.loads(target.read_text())
+        assert parsed["mcp_servers"]["context7"] == {"url": "https://mcp.context7.com/mcp"}
+        assert parsed["mcp_servers"]["private"] == {"command": "private-server"}
+        output = io.StringIO()
+        with redirect_stdout(output):
+            install(alternate)
+        assert not output.getvalue(), output.getvalue()
+
     # Invalid existing config must fail before any links are installed.
     bad_home = home / "invalid"
     (bad_home / ".codex").mkdir(parents=True)
