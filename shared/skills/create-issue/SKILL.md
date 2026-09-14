@@ -7,12 +7,12 @@ model: haiku
 
 ## Context
 
-- 収集情報（起票先リポジトリ・現在のブランチ・issue テンプレート有無と本文）: !`bash ${CLAUDE_SKILL_DIR}/scripts/check-context.sh`
+- 収集情報（起票先リポジトリ・現在のブランチ・issue テンプレート有無と本文）: `bash "$HOME/.agents/skills/create-issue/scripts/check-context.sh"` を実行して取得する
 
 ## Additional resources
 
 - 本文テンプレートは [REFERENCE.md](REFERENCE.md) を参照してください
-- タイトルの prefix 規約は [git-guideline.md](@~/.claude/rules/git-guideline.md) を参照してください
+- タイトルの prefix 規約は [git-guideline.md](~/.agents/rules/git-guideline.md) を参照してください
 
 ## Task
 
@@ -30,7 +30,7 @@ model: haiku
 3. 入力源を統合してタイトルと本文を起草する
    - `$ARGUMENTS` があればそれを主軸に、無ければ直近の会話・作業文脈（調査結果・発見したバグ・決定事項）を要約して素材にする
    - 本文は前ステップで決めたテンプレート構造に必ず従う。該当が無いセクションは「特になし」と明記し、勝手に省略しない
-   - 素材が薄く「現状」や「受け入れ基準」が埋められない場合は、AskUserQuestion で不足だけを補完質問する。
+   - 素材が薄く「現状」や「受け入れ基準」が埋められない場合は、利用可能な質問ツール で不足だけを補完質問する。
      全部を訊き直すのではなく、テンプレートの空欄を埋めるために本当に足りない情報に絞ること
    - タイトルは git-guideline の prefix（`feat:` / `fix:` / `docs:` / `refactor:` / `chore:` など）を内容から推論して付け、
      prefix 以降は日本語で簡潔に書く。本文はすべて日本語

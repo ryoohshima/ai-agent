@@ -6,11 +6,11 @@ allowed-tools: Bash(git fetch:*), Bash(git status:*), Bash(git log:*), Bash(git 
 
 ## Context
 
-- 収集情報: !`bash ${CLAUDE_SKILL_DIR}/scripts/check-context.sh`
+- 収集情報: `bash "$HOME/.agents/skills/fix-pr-conflict/scripts/check-context.sh"` を実行して取得する
 
 ## Additional resources
 
-- 共通ルールは [git ガイドライン](@~/.claude/rules/git-guideline.md) を参照
+- 共通ルールは [git ガイドライン](~/.agents/rules/git-guideline.md) を参照
 
 ## Task（workflow）
 

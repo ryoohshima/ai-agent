@@ -1,6 +1,6 @@
 ---
 name: plan-check
-description: Claude Code が提示した実装プランを、ユーザーの本質的な課題を解決できるかという観点で第三者レビューするスキル。Use when 実装着手前にプランの課題認識・手段の適合性・前提を点検したいとき。トリガー語は「プランをチェック」「このプランで合ってる」「plan check」「/plan-check」。
+description: AI エージェントが提示した実装プランを、ユーザーの本質的な課題を解決できるかという観点で第三者レビューするスキル。Use when 実装着手前にプランの課題認識・手段の適合性・前提を点検したいとき。トリガー語は「プランをチェック」「このプランで合ってる」「plan check」「/plan-check」。
 allowed-tools: Agent, Read, Grep, Bash(cat:*), Bash(git:*)
 ---
 

@@ -27,8 +27,8 @@ echo "=== このプロジェクトの既存スキル (${project_skills}) ==="
 list_skill_names "$project_skills"
 
 echo
-echo "=== 個人スキル (~/.claude/skills) ==="
-list_skill_names "${HOME}/.claude/skills"
+echo "=== 個人スキル (~/.agents/skills) ==="
+list_skill_names "${HOME}/.agents/skills"
 
 echo
 echo "※ 新規スキル名は上記と衝突しない kebab-case にすること。"

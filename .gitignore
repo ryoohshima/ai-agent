@@ -42,3 +42,12 @@ security/
 .DS_Store
 .last-cleanup
 .last-update-result.json
+
+# ローカル認証・バックアップ・Python 実行データ
+auth.json
+*.bak
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc

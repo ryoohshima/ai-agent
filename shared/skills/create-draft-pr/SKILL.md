@@ -1,4 +1,5 @@
 ---
+name: create-draft-pr
 description: 実装差分を検知して PR 作成を実行するスキル
 allowed-tools: Bash(git remote:*), Bash(git status), Bash(git diff:*), Bash(git push -u origin:*), Bash(git log:*), Bash(gh pr:*), Bash(gh repo:*), Bash(bash:*)
 model: haiku
@@ -6,11 +7,11 @@ model: haiku
 
 ## Context
 
-- 収集情報（デフォルトブランチ・git ステータス・PR テンプレート有無と本文）: !`bash ${CLAUDE_SKILL_DIR}/scripts/check-context.sh`
+- 収集情報（デフォルトブランチ・git ステータス・PR テンプレート有無と本文）: `bash "$HOME/.agents/skills/create-draft-pr/scripts/check-context.sh"` を実行して取得する
 
 ## Additional resources
 
-- Git 規約は [git-guideline.md](@~/.claude/rules/git-guideline.md) を参照してください
+- Git 規約は [git-guideline.md](~/.agents/rules/git-guideline.md) を参照してください
 
 ## Task
 

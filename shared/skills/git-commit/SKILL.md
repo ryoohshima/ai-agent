@@ -7,16 +7,16 @@ model: haiku
 
 ## コンテキスト
 
-起動時に以下を先回りで収集しているため、追加のコマンド実行なしで分析へ進めること。
+最初に以下の補助スクリプトを実行して収集し、分析へ進めること。
 俯瞰情報（状態・stat・log）→ 詳細差分の順に並べてある。
 
-- 収集情報（ブランチ・状態・stat・ステージ/未ステージ差分・直近 log）: !`bash ${CLAUDE_SKILL_DIR}/scripts/check-context.sh`
+- 収集情報（ブランチ・状態・stat・ステージ/未ステージ差分・直近 log）: `bash "$HOME/.agents/skills/git-commit/scripts/check-context.sh"` を実行して取得する
 
 `git diff` は新規（追跡外）ファイルを映さないため、`git status --short` に出た未追跡ファイルは中身を別途 `git diff --no-index /dev/null [file]` 等で確認してから分類する。
 
 ## Additional resources
 
-- Git 規約は [git-guideline.md](@~/.claude/rules/git-guideline.md) を参照してください
+- Git 規約は [git-guideline.md](~/.agents/rules/git-guideline.md) を参照してください
 - 分類の具体例は [examples.md](examples.md) を参照してください
 
 ## Task
@@ -47,7 +47,7 @@ model: haiku
 - commit は可能な限り細かく、1コミットに対して1つの関連する変更になるようにする
 - コミットメッセージは「How（どう変えたか）」に焦点を当てた簡潔なメッセージにする。What（何を）はコード自体で表現する
 - コミットメッセージには prefix をつける
-- ユーザーへの確認が必要な場面（ブランチ作成の可否、判断が割れる分類など）では AskUserQuestion を使う
+- ユーザーへの確認が必要な場面（ブランチ作成の可否、判断が割れる分類など）では 利用可能な質問ツール を使う
 
 ## User Input
 

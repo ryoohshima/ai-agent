@@ -16,20 +16,20 @@ name: <skill-name>
 description: <このスキルが何をするかを一文で>。Use when <いつ使うか＝when use xxx>。トリガー語は「<起動語1>」「<起動語2>」「/<skill-name>」。
 # ↑ 要点とトリガー語を前方へ。1,536 文字で切られる点に注意。
 # ↑ 値の中で半角コロン＋空白「: 」は使わない（YAML が壊れる）。読点や「＝」で繋ぐこと。
-allowed-tools: <Bash(...:*) / Read / Write など、許可なしで使わせたいツールのみ>
+# Claude Code 専用の任意項目: allowed-tools
 # ↑ 任意。スペース or カンマ区切り。不要なら行を削除。
-model: <haiku など>
+# Claude Code 専用の任意項目: model
 # ↑ 任意。省略するとセッションのモデルを継承。判断を要するスキルは省略推奨。
 ---
 
 ## Context
-<!-- 起動時に先回りで集めたい情報があれば、bash 注入で取得する。不要なら本セクションごと削除。 -->
-- 収集情報: !`bash ${CLAUDE_SKILL_DIR}/scripts/<収集スクリプト>.sh`
+<!-- 起動時に先回りで集めたい情報があれば、補助スクリプトを明示的に実行する。不要なら本セクションごと削除。 -->
+- 収集情報: `bash "$HOME/.agents/skills/<skill-name>/scripts/<収集スクリプト>.sh"` を実行する
 
 ## Additional resources
 <!-- 補助ファイルや共通ルールを参照する場合のみ残す。 -->
 - 詳細テンプレートは [REFERENCE.md](REFERENCE.md) を参照
-- 共通ルールは [<ガイドライン名>](@~/.claude/rules/<file>.md) を参照
+- 共通ルールは [<ガイドライン名>](~/.agents/rules/<file>.md) を参照
 
 ## Task（workflow）
 <!-- このスキルがやることを番号付きの手順で簡潔に。各ステップは一文。 -->

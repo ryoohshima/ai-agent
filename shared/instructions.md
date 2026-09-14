@@ -1,4 +1,4 @@
-# Claude Code ユーザー設定
+# AI エージェント共通ユーザー設定
 
 このファイルには、全プロジェクト共通で適用される開発ガイドラインを記載しています。
 
@@ -40,7 +40,7 @@
 - 複雑な問題に対しては、サブエージェントを通じて計算リソースを投入する。
 - 集中して実行できるよう、1人のサブエージェントにつき1つのタスクを割り当てる。
 - サブエージェント起動時はタスクの性質に応じてモデルを明示指定し、セッションのモデルを漫然と継承させない。
-  - 取得・列挙が主のタスク（ファイル検索・grep・ログ/差分の抽出や要約・命名規約の洗い出し）は軽量モデル（haiku / sonnet）を指定してコストを抑える。
+  - 取得・列挙が主のタスク（ファイル検索・grep・ログ/差分の抽出や要約・命名規約の洗い出し）は軽量モデル（各エージェントで利用可能な軽量モデル）を指定してコストを抑える。
   - 判断・評価が主のタスク（コードレビュー・設計案の評価・バグ仮説の検証）は上位モデルを維持する。安易に下げると見落としでやり直しコストが増える。
 
 ### 3. 自己改善ループ
@@ -112,4 +112,6 @@ In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the re
 If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
 <!-- CODEGRAPH_END -->
 
-@RTK.md
+
+
+開発・Git 操作時は `~/.agents/rules/coding-guideline.md` と `~/.agents/rules/git-guideline.md` を読み、適用する。
