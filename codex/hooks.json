@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [{
+      "matcher": "startup|resume|clear|compact",
+      "hooks": [{"type": "command", "command": "zsh \"$HOME/.agents/hooks/lessons-session-start.sh\""}]
+    }],
+    "UserPromptSubmit": [{
+      "hooks": [{"type": "command", "command": "zsh \"$HOME/.agents/hooks/lessons-user-prompt.sh\""}]
+    }],
+    "Stop": [{
+      "hooks": [{"type": "command", "command": "afplay /System/Library/Sounds/Frog.aiff"}]
+    }]
+  }
+}

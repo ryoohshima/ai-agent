@@ -1,0 +1,10 @@
+# Claude のコマンド deny/ask を Codex の実行ポリシーへ移植。
+prefix_rule(pattern = [["rm", "/bin/rm"]], decision = "forbidden", match = ["rm file", "/bin/rm file"])
+prefix_rule(pattern = ["git", "rm"], decision = "forbidden", match = ["git rm file"])
+prefix_rule(pattern = ["sudo"], decision = "forbidden", match = ["sudo command"])
+prefix_rule(pattern = ["git", "config"], decision = "forbidden", match = ["git config user.name"])
+prefix_rule(pattern = ["brew", "install"], decision = "forbidden", match = ["brew install package"])
+prefix_rule(pattern = ["chmod"], decision = "forbidden", match = ["chmod +x script"])
+prefix_rule(pattern = ["gh", "repo", "delete"], decision = "forbidden", match = ["gh repo delete example"])
+prefix_rule(pattern = ["vercel", "env"], decision = "forbidden", match = ["vercel env ls"])
+prefix_rule(pattern = ["cat"], decision = "prompt", match = ["cat file"])
