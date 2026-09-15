@@ -15,7 +15,7 @@ claude/
   hooks/                Claude 固有の連携
   RTK.md / statusline.sh
 codex/
-  AGENTS.md             共通指示の読み込みと Codex 固有指示
+  AGENTS.md             Codex の個人指示と必要時に読む共通ルール
   config.toml           Codex の初期設定
   hooks.json            Codex 用フックの追加定義
   rules/                Codex のコマンド実行ポリシー
@@ -41,6 +41,7 @@ uv run --no-project --with-requirements requirements.txt python3 test_install.py
 - Claude の設定は `claude/` を編集します。マシン固有の上書きは Git 管理外の `~/.claude/settings.local.json` に置きます。
 - MCP は両エージェントとも `shared/mcp-servers.json` を正とし、`./install.sh` で同名サーバーの定義全体を上書きします。定義内で削除した項目も反映します。リポジトリにないサーバーは保持するため、サーバー自体を削除する場合はローカル設定からも削除します。認証情報はリポジトリに含めません。
 - Codex のモデル・アプリ連携など MCP 以外の既存設定は保持します。`codex/config.toml` は未設定項目だけを補う初期値です。
+- Codex の指示は `codex/AGENTS.md` を編集します。`~/.codex/AGENTS.md` のリンク経由で反映され、新しいセッションで読み込まれます。共通の `shared/instructions.md` は一括で読まず、開発・Git の共通ルールを必要時に読みます。
 - `codex/hooks.json` はインストール時に既存フックへ重複なく追記します。定義を変更・削除した場合は `~/.codex/hooks.json` の古い定義も調整します。新しいフックは Codex CLI の `/hooks` で確認・信頼してください。既存の Orca / Superset 連携は保持します。
 - 新しいスキル・ルール・フックスクリプトの追加後は `./install.sh` を再実行します。アプリ管理の `computer-use` / `orchestration` / `orca-cli` やプラグインは各アプリ側で管理します。
 
@@ -74,6 +75,7 @@ python3 test_hook_output.py "$HOME/.codex/plugins/cache/claude-plugins-official/
 
 ## 公式仕様
 
+- [GPT-6 Astra 向けのスキル・指示の見直し](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
 - [共通スキルの配置とシンボリックリンク](https://learn.chatgpt.com/docs/build-skills)
 - [AGENTS.md とフォールバック](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
 - [Codex フックの信頼確認](https://learn.chatgpt.com/docs/hooks)
