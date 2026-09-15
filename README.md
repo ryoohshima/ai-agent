@@ -57,15 +57,6 @@ Codex の既存インポート設定は保持しますが、共通ファイル�
 - Codex に lessons のリマインダーと完了音を追加しています。Claude の Notification、RTK 自動書き換え、独自ステータスラインは Claude 側に残します。
 - 共通スキルの補助スクリプトは明示実行に統一しています。Claude 専用 frontmatter のモデル・ツール指定は Codex に適用しません。
 
-## Codex の security-guidance フック互換修正
-
-`security-guidance` 2.0.8 の Claude 固有出力（`metrics` / `rewakeSummary`）を Codex 用に変換するパッチです。警告・続行判断は保持し、Claude での出力は変更しません。手元の Codex キャッシュには適用済みです。プラグインの更新・再インストールで上書きされる場合があるため、その際は再確認してください。以下は未適用の 2.0.8 に対して実行します。
-
-```sh
-patch --backup -p1 -d "$HOME/.codex/plugins/cache/claude-plugins-official/security-guidance/2.0.8" < codex/patches/security-guidance-2.0.8.patch
-python3 test_hook_output.py "$HOME/.codex/plugins/cache/claude-plugins-official/security-guidance/2.0.8/hooks/security_reminder_hook.py"
-```
-
 ## ローカルデータと復元
 
 認証情報、会話履歴、キャッシュ、プラグインの実体は `~/.claude` / `~/.codex` に置き、Git 管理しません。
