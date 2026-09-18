@@ -41,6 +41,7 @@ uv run --no-project --with-requirements requirements.txt python3 test_install.py
 - Claude の設定は `claude/` を編集します。マシン固有の上書きは Git 管理外の `~/.claude/settings.local.json` に置きます。
 - MCP は両エージェントとも `shared/mcp-servers.json` を正とし、`./install.sh` で同名サーバーの定義全体を上書きします。定義内で削除した項目も反映します。リポジトリにないサーバーは保持するため、サーバー自体を削除する場合はローカル設定からも削除します。認証情報はリポジトリに含めません。
 - Codex のモデル・アプリ連携など MCP 以外の既存設定は保持します。`codex/config.toml` は未設定項目だけを補う初期値です。
+- 共通の個人指示は `shared/instructions.md` を正本とし、Claude の `CLAUDE.md` と Codex の `AGENTS.md` が同じ `~/.agents/instructions.md` を読みます。各入口には固有指示だけを置き、開発・Git の詳細ルールは共通指示から必要時に読みます。変更は既存リンク経由で反映され、新しいセッションで読み込まれます。
 - `codex/hooks.json` はインストール時に既存フックへ重複なく追記します。定義を変更・削除した場合は `~/.codex/hooks.json` の古い定義も調整します。新しいフックは Codex CLI の `/hooks` で確認・信頼してください。既存の Orca / Superset 連携は保持します。
 - 新しいスキル・ルール・フックスクリプトの追加後は `./install.sh` を再実行します。アプリ管理の `computer-use` / `orchestration` / `orca-cli` やプラグインは各アプリ側で管理します。
 
@@ -52,18 +53,9 @@ Codex の既存インポート設定は保持しますが、共通ファイル�
 
 - モデル名、権限、ステータスライン、プラグインは各エージェント固有です。Claude の設定ファイルをそのまま Codex へは渡しません。
 - Codex はプロジェクトに `AGENTS.md` がなければ `CLAUDE.md` を読みます。両方ある場合は `AGENTS.md` が優先されます。
-- Claude のコマンド deny/ask を Codex の `.rules` に移植しています。Codex のルールはサンドボックス外での実行を制御するもので、Claude の権限モデルと完全に同じではありません。`.env` の読み取り禁止は Codex の指示にも記載していますが、ファイルアクセス制御と同義ではありません。
+- Claude のコマンド deny/ask を Codex の `.rules` に移植しています。Codex のルールはサンドボックス外での実行を制御するもので、Claude の権限モデルと完全に同じではありません。`.env` の読み取り禁止は共通指示に記載していますが、ファイルアクセス制御と同義ではありません。
 - Codex に lessons のリマインダーと完了音を追加しています。Claude の Notification、RTK 自動書き換え、独自ステータスラインは Claude 側に残します。
 - 共通スキルの補助スクリプトは明示実行に統一しています。Claude 専用 frontmatter のモデル・ツール指定は Codex に適用しません。
-
-## Codex の security-guidance フック互換修正
-
-`security-guidance` 2.0.8 の Claude 固有出力（`metrics` / `rewakeSummary`）を Codex 用に変換するパッチです。警告・続行判断は保持し、Claude での出力は変更しません。手元の Codex キャッシュには適用済みです。プラグインの更新・再インストールで上書きされる場合があるため、その際は再確認してください。以下は未適用の 2.0.8 に対して実行します。
-
-```sh
-patch --backup -p1 -d "$HOME/.codex/plugins/cache/claude-plugins-official/security-guidance/2.0.8" < codex/patches/security-guidance-2.0.8.patch
-python3 test_hook_output.py "$HOME/.codex/plugins/cache/claude-plugins-official/security-guidance/2.0.8/hooks/security_reminder_hook.py"
-```
 
 ## ローカルデータと復元
 
@@ -74,6 +66,7 @@ python3 test_hook_output.py "$HOME/.codex/plugins/cache/claude-plugins-official/
 
 ## 公式仕様
 
+- [GPT-6 Astra 向けのスキル・指示の見直し](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
 - [共通スキルの配置とシンボリックリンク](https://learn.chatgpt.com/docs/build-skills)
 - [AGENTS.md とフォールバック](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
 - [Codex フックの信頼確認](https://learn.chatgpt.com/docs/hooks)
