@@ -37,19 +37,27 @@ model = "profile-model"
     (home / ".claude.json").write_text('{"local": true, "mcpServers": {"private": {"command": "private-server"}, "context7": {"url": "stale", "env": {"OLD": "remove-me"}, "command": "stale-command"}}}')
     existing_hook = {"hooks": [{"type": "command", "command": "echo external-hook"}]}
     (home / ".codex/hooks.json").write_text(json.dumps({"hooks": {"Stop": [existing_hook]}}))
+    (home / ".agents/instructions.md").symlink_to(REPO / "shared/instructions.md")
     before = {p.relative_to(home): p.read_bytes() for p in home.rglob("*") if p.is_file()}
     with redirect_stdout(io.StringIO()):
         install(home, dry=True)
     assert before == {p.relative_to(home): p.read_bytes() for p in home.rglob("*") if p.is_file()}
     assert not (home / ".local").exists()
+    assert (home / ".agents/instructions.md").readlink() == REPO / "shared/instructions.md"
     with redirect_stdout(io.StringIO()):
         install(home)
+    common = home / ".agents/AGENTS.md"
+    assert common.resolve() == REPO / "shared/AGENTS.md"
+    assert (home / ".agents/instructions.md").samefile(common)
+    assert "@~/.agents/AGENTS.md" in (home / ".claude/CLAUDE.md").read_text()
+    assert "`~/.agents/AGENTS.md`" in (home / ".codex/AGENTS.md").read_text()
     assert (home / ".claude").is_dir() and not (home / ".claude").is_symlink()
     for name in (".agents", ".claude"):
         assert (home / name / "skills/git-commit").resolve() == REPO / "shared/skills/git-commit"
     assert not (home / ".codex/skills/git-commit").exists()
     saved = list((home / ".local/state/ai-agent").glob("install-*"))
     assert len(saved) == 1
+    assert (saved[0] / ".agents/instructions.md").readlink() == REPO / "shared/instructions.md"
     assert (saved[0] / ".agents/skills/git-commit/local.txt").read_text() == "custom skill"
     assert (saved[0] / ".codex/skills/git-commit/local.txt").read_text() == "legacy skill"
     for name in (".codex/auth.json", ".claude/history.jsonl", ".claude/settings.local.json"):

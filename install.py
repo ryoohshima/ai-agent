@@ -96,7 +96,8 @@ def install(home, dry=False):
             raise ValueError(f"{home / name} is a directory symlink; migrate its runtime data first")
 
     for source, target in [
-        ("shared/instructions.md", ".agents/instructions.md"),
+        ("shared/AGENTS.md", ".agents/AGENTS.md"),
+        ("shared/AGENTS.md", ".agents/instructions.md"),  # Compatibility for existing entry points.
         ("claude/CLAUDE.md", ".claude/CLAUDE.md"),
         ("claude/RTK.md", ".claude/RTK.md"),
         ("claude/settings.json", ".claude/settings.json"),
