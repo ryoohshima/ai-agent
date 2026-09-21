@@ -111,6 +111,14 @@ def install(home, dry=False):
         link(path, home / ".claude/rules" / path.name)
     for path in sorted((REPO / "codex/rules").glob("*.rules")):
         link(path, home / ".codex/rules" / path.name)
+    # Retired shared skills: preserve custom directories and unrelated links.
+    for name in ("write-a-skill", "coding-standards"):
+        for folder in (".agents/skills", ".claude/skills", ".codex/skills"):
+            target = home / folder / name
+            if target.is_symlink() and target.resolve() == REPO / "shared/skills" / name:
+                print(f"backup retired skill link: {target}")
+                if not dry:
+                    save(target, move=True)
     for folder, targets in [
         ("shared/hooks", (".agents/hooks", ".claude/hooks")),
         ("claude/hooks", (".claude/hooks",)),

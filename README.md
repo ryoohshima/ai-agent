@@ -51,6 +51,12 @@ Codex は `~/.agents/skills/<name>`、Claude は `~/.claude/skills/<name>` か�
 Codex の旧 `~/.codex/skills` にある同名コピーはバックアップに退避し、二重読み込みを解消します。
 Codex の既存インポート設定は保持しますが、共通ファイルの同期は上記リンクが担います。
 
+`write-a-skill` は標準の `skill-creator` に置き換え、`coding-standards` の必要な規約は `shared/rules/coding-guideline.md` に集約しました。インストーラーは廃止した2スキルの共有リンクをバックアップに退避します。個人作成の同名ディレクトリや無関係なリンクは保持します。
+
+`skill-creator` は Codex 標準版を残し、重複する同期版は `~/.codex/config.toml` で無効化します。
+
+Codex では旧 `sandbox-sdk` を無効化し、`sandbox-stable`・`sandbox-next`・`sandbox-migrate-to-next` を用途別に使います。文書系は公式プラグインを優先し、重複する同期版 `docx`・`pptx`・`xlsx`・`pdf` は `~/.codex/config.toml` の `[[skills.config]]` で各 `SKILL.md` の絶対パスを指定して `enabled = false` にします。同期先やプラグインキャッシュは直接編集しません。Ponytail・Orca は維持します。
+
 ## エージェント間の違い
 
 - モデル名、権限、ステータスライン、プラグインは各エージェント固有です。Claude の設定ファイルをそのまま Codex へは渡しません。
@@ -60,6 +66,8 @@ Codex の既存インポート設定は保持しますが、共通ファイル�
 - 共通スキルの補助スクリプトは明示実行に統一しています。Claude 専用 frontmatter のモデル・ツール指定は Codex に適用しません。
 
 ## Codex のセキュリティレビュー
+
+監査は OpenAI 提供の Codex Security プラグインを優先し、重複するローカル `security-audit` は無効化します。
 
 OpenAI 公式の `security-best-practices` を `~/.codex/skills/` に導入しています。Python・JavaScript/TypeScript・Go の安全な実装や明示的なレビュー依頼で使うスキルで、Claude の `security-guidance` の自動フックとは実行方式が異なります。新しい環境では Skill Installer に `openai/skills` の `skills/.curated/security-best-practices` を指定して導入してください。
 
