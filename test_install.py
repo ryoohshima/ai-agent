@@ -36,7 +36,11 @@ model = "profile-model"
     (home / ".claude/settings.local.json").write_text('{"local": true}')
     (home / ".claude.json").write_text('{"local": true, "mcpServers": {"private": {"command": "private-server"}, "context7": {"url": "stale", "env": {"OLD": "remove-me"}, "command": "stale-command"}}}')
     existing_hook = {"hooks": [{"type": "command", "command": "echo external-hook"}]}
-    (home / ".codex/hooks.json").write_text(json.dumps({"hooks": {"Stop": [existing_hook]}}))
+    legacy_sound = {"type": "command", "command": "afplay /System/Library/Sounds/Frog.aiff"}
+    safe_sound = {"type": "command", "command": legacy_sound["command"] + " 2>/dev/null || :"}
+    (home / ".codex/hooks.json").write_text(json.dumps({"hooks": {"Stop": [
+        {"hooks": [legacy_sound]}, {"hooks": [safe_sound, *existing_hook["hooks"]]},
+    ]}}))
     (home / ".agents/instructions.md").symlink_to(REPO / "shared/instructions.md")
     before = {p.relative_to(home): p.read_bytes() for p in home.rglob("*") if p.is_file()}
     with redirect_stdout(io.StringIO()):
@@ -69,6 +73,7 @@ model = "profile-model"
     assert result["profiles"]["local"]["model"] == "profile-model"
     assert result["mcp_servers"]["agenttakt"]["tool_timeout_sec"] == 1800
     assert result["project_doc_fallback_filenames"] == ["CLAUDE.md"]
+    assert result["notify"] == ["bash", "-lc", "afplay /System/Library/Sounds/Bottle.aiff"]
     rendered = (home / ".codex/config.toml").read_text()
     assert "# keep this comment" in rendered
     assert 'command = "private-server" # keep private comment' in rendered
@@ -76,7 +81,7 @@ model = "profile-model"
     claude_servers = json.loads((home / ".claude.json").read_text())["mcpServers"]
     assert claude_servers["private"]["command"] == "private-server"
     assert claude_servers["context7"] == json.loads((REPO / "shared/mcp-servers.json").read_text())["mcpServers"]["context7"]
-    assert existing_hook in json.loads((home / ".codex/hooks.json").read_text())["hooks"]["Stop"]
+    assert json.loads((home / ".codex/hooks.json").read_text())["hooks"]["Stop"] == [existing_hook]
     output = io.StringIO()
     with redirect_stdout(output):
         install(home)
