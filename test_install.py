@@ -42,12 +42,20 @@ model = "profile-model"
         {"hooks": [legacy_sound]}, {"hooks": [safe_sound, *existing_hook["hooks"]]},
     ]}}))
     (home / ".agents/instructions.md").symlink_to(REPO / "shared/instructions.md")
+    (home / ".agents/skills/write-a-skill").symlink_to(REPO / "shared/skills/write-a-skill")
+    (home / ".agents/skills/coding-standards").mkdir()
+    (home / ".agents/skills/coding-standards/custom.txt").write_text("keep custom skill")
+    unrelated = home / "another-repo/shared/skills/write-a-skill"
+    unrelated.mkdir(parents=True)
+    (unrelated / "SKILL.md").write_text("keep unrelated skill")
+    (home / ".codex/skills/write-a-skill").symlink_to(unrelated)
     before = {p.relative_to(home): p.read_bytes() for p in home.rglob("*") if p.is_file()}
     with redirect_stdout(io.StringIO()):
         install(home, dry=True)
     assert before == {p.relative_to(home): p.read_bytes() for p in home.rglob("*") if p.is_file()}
     assert not (home / ".local").exists()
     assert (home / ".agents/instructions.md").readlink() == REPO / "shared/instructions.md"
+    assert (home / ".agents/skills/write-a-skill").is_symlink()
     with redirect_stdout(io.StringIO()):
         install(home)
     common = home / ".agents/AGENTS.md"
@@ -59,11 +67,15 @@ model = "profile-model"
     for name in (".agents", ".claude"):
         assert (home / name / "skills/git-commit").resolve() == REPO / "shared/skills/git-commit"
     assert not (home / ".codex/skills/git-commit").exists()
+    assert not (home / ".agents/skills/write-a-skill").is_symlink()
+    assert (home / ".agents/skills/coding-standards/custom.txt").read_text() == "keep custom skill"
+    assert (home / ".codex/skills/write-a-skill").resolve() == unrelated.resolve()
     saved = list((home / ".local/state/ai-agent").glob("install-*"))
     assert len(saved) == 1
     assert (saved[0] / ".agents/instructions.md").readlink() == REPO / "shared/instructions.md"
     assert (saved[0] / ".agents/skills/git-commit/local.txt").read_text() == "custom skill"
     assert (saved[0] / ".codex/skills/git-commit/local.txt").read_text() == "legacy skill"
+    assert (saved[0] / ".agents/skills/write-a-skill").readlink() == REPO / "shared/skills/write-a-skill"
     for name in (".codex/auth.json", ".claude/history.jsonl", ".claude/settings.local.json"):
         assert (home / name).read_bytes() == before[Path(name)]
     result = tomllib.loads((home / ".codex/config.toml").read_text())
