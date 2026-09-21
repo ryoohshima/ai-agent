@@ -3,18 +3,19 @@ from contextlib import redirect_stdout
 import io
 import json
 from pathlib import Path
+import shutil
 from tempfile import TemporaryDirectory
 import tomllib
+from unittest.mock import patch
 
 from install import REPO, install
 
 
 with TemporaryDirectory(prefix="ai-agent-check-") as directory:
     home = Path(directory)
-    (home / ".codex/skills/git-commit").mkdir(parents=True)
+    (home / ".codex/skills").mkdir(parents=True)
     (home / ".agents/skills/git-commit").mkdir(parents=True)
     (home / ".claude").mkdir()
-    (home / ".codex/skills/git-commit/local.txt").write_text("legacy skill")
     (home / ".agents/skills/git-commit/local.txt").write_text("custom skill")
     config = '''# keep this comment
 model = "local-model"
@@ -36,11 +37,7 @@ model = "profile-model"
     (home / ".claude/settings.local.json").write_text('{"local": true}')
     (home / ".claude.json").write_text('{"local": true, "mcpServers": {"private": {"command": "private-server"}, "context7": {"url": "stale", "env": {"OLD": "remove-me"}, "command": "stale-command"}}}')
     existing_hook = {"hooks": [{"type": "command", "command": "echo external-hook"}]}
-    legacy_sound = {"type": "command", "command": "afplay /System/Library/Sounds/Frog.aiff"}
-    safe_sound = {"type": "command", "command": legacy_sound["command"] + " 2>/dev/null || :"}
-    (home / ".codex/hooks.json").write_text(json.dumps({"hooks": {"Stop": [
-        {"hooks": [legacy_sound]}, {"hooks": [safe_sound, *existing_hook["hooks"]]},
-    ]}}))
+    (home / ".codex/hooks.json").write_text(json.dumps({"hooks": {"Stop": [existing_hook]}}))
     (home / ".agents/instructions.md").symlink_to(REPO / "shared/instructions.md")
     (home / ".agents/skills/write-a-skill").symlink_to(REPO / "shared/skills/write-a-skill")
     (home / ".agents/skills/coding-standards").mkdir()
@@ -74,7 +71,6 @@ model = "profile-model"
     assert len(saved) == 1
     assert (saved[0] / ".agents/instructions.md").readlink() == REPO / "shared/instructions.md"
     assert (saved[0] / ".agents/skills/git-commit/local.txt").read_text() == "custom skill"
-    assert (saved[0] / ".codex/skills/git-commit/local.txt").read_text() == "legacy skill"
     assert (saved[0] / ".agents/skills/write-a-skill").readlink() == REPO / "shared/skills/write-a-skill"
     for name in (".codex/auth.json", ".claude/history.jsonl", ".claude/settings.local.json"):
         assert (home / name).read_bytes() == before[Path(name)]
@@ -128,4 +124,42 @@ model = "profile-model"
     except tomllib.TOMLDecodeError:
         assert not (bad_home / ".agents").exists()
 
-print("PASS: dry-run, backups, shared links, local data, config merge, idempotency, invalid input")
+    # New files and nested directories must deploy without an installer edit.
+    repo = (home / "repo").resolve()
+    for folder in ("shared", "claude", "codex"):
+        shutil.copytree(REPO / folder, repo / folder)
+    added = {
+        "shared/new-guide.md": (".agents/new-guide.md",),
+        "claude/templates/new.txt": (".claude/templates/new.txt",),
+        "codex/templates/new.txt": (".codex/templates/new.txt",),
+        "shared/hooks/nested/new.sh": (".agents/hooks/nested/new.sh", ".claude/hooks/nested/new.sh"),
+        "shared/skills/new-skill/SKILL.md": (".agents/skills/new-skill/SKILL.md", ".claude/skills/new-skill/SKILL.md"),
+    }
+    for source in added:
+        path = repo / source
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("new content")
+    for name in ("settings.json.bak", ".DS_Store", "draft~"):
+        (repo / "claude" / name).write_text("not for deployment")
+    fresh = home / "fresh"
+    external = fresh / ".agents/skills/app-managed/SKILL.md"
+    external.parent.mkdir(parents=True)
+    external.write_text("app-owned")
+    with patch("install.REPO", repo), redirect_stdout(io.StringIO()):
+        install(fresh)
+    for source, targets in added.items():
+        for target in targets:
+            assert (fresh / target).resolve() == repo / source
+    assert (fresh / ".agents/skills/new-skill").is_symlink()
+    assert not (fresh / ".claude/templates").is_symlink()
+    assert external.read_text() == "app-owned"
+    assert not (fresh / ".codex/config.toml").is_symlink()
+    assert not (fresh / ".codex/hooks.json").is_symlink()
+    for name in ("settings.json.bak", ".DS_Store", "draft~"):
+        assert not (fresh / ".claude" / name).exists()
+    output = io.StringIO()
+    with patch("install.REPO", repo), redirect_stdout(output):
+        install(fresh)
+    assert not output.getvalue(), output.getvalue()
+
+print("PASS: dry-run, backups, shared links, local data, config merge, idempotency, invalid input, automatic file discovery")

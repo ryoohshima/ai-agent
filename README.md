@@ -43,12 +43,14 @@ uv run --no-project --with-requirements requirements.txt python3 test_install.py
 - Codex のモデル・アプリ連携など MCP 以外の既存設定は保持します。`codex/config.toml` は未設定項目だけを補う初期値です。
 - 共通の個人指示は `shared/AGENTS.md` を正本とし、Claude の `CLAUDE.md` と Codex の `AGENTS.md` が同じ `~/.agents/AGENTS.md` を読みます。各入口には固有指示だけを置き、開発・Git の詳細ルールは共通指示から必要時に読みます。変更は既存リンク経由で反映され、新しいセッションで読み込まれます。
 - Claude は `@~/.agents/AGENTS.md` で共通指示を import し、その下に Claude 固有指示を置きます。`~/.agents/AGENTS.md` は自動探索に頼らず各入口から明示的に読み込みます。旧 `~/.agents/instructions.md` は既存の参照向けに同じ正本への互換リンクとして残します。既存環境でこの改名を取り込んだら、新しいセッションを開始する前に `./install.sh` を再実行してリンクを更新してください。
-- 完了音は `codex/config.toml` の `notify` で設定します。インストーラーは旧 Frog 通知の Stop フック 2 種類だけを削除し、他のフックと既存の `notify` は保持します。
+- 完了音は `codex/config.toml` の `notify` で設定します。既存の `notify` は保持します。
 - `codex/hooks.json` はインストール時に既存フックへ重複なく追記します。定義を変更・削除した場合は `~/.codex/hooks.json` の古い定義も調整します。新しいフックは Codex CLI の `/hooks` で確認・信頼してください。既存の Orca / Superset 連携は保持します。
 - 新しいスキル・ルール・フックスクリプトの追加後は `./install.sh` を再実行します。アプリ管理の `computer-use` / `orchestration` / `orca-cli` やプラグインは各アプリ側で管理します。
+- `shared/` → `~/.agents/`、`claude/` → `~/.claude/`、`codex/` → `~/.codex/` の構造をたどり、ファイルを自動でリンクします。スキルは `SKILL.md` を含むディレクトリ単位、その他のディレクトリは既存ファイルと共存する個別リンクです。共通の `rules/`・`skills/`・`hooks/` は Claude にも配置します。通常のファイル追加で `install.py` の変更は不要です。この3ディレクトリには配置するファイルだけを置いてください。
+- 隠しファイル・ディレクトリ、`*.bak`、`*~`、`__pycache__`、`*.pyc` は配置対象から除外します。例外はマージする `codex/config.toml`・`codex/hooks.json`、Claude への配置と両クライアントへの同期に使う `shared/mcp-servers.json`、旧指示パスへの互換リンクです。削除・改名したファイルの配置先リンクは自動削除しません。
 
 Codex は `~/.agents/skills/<name>`、Claude は `~/.claude/skills/<name>` から同じディレクトリを参照します。
-Codex の旧 `~/.codex/skills` にある同名コピーはバックアップに退避し、二重読み込みを解消します。
+旧通知フックと `~/.codex/skills` の共通スキルの重複コピーは移行済みです。これらの移行処理はインストーラーから除去しています。
 Codex の既存インポート設定は保持しますが、共通ファイルの同期は上記リンクが担います。
 
 `write-a-skill` は標準の `skill-creator` に置き換え、`coding-standards` の必要な規約は `shared/rules/coding-guideline.md` に集約しました。インストーラーは廃止した2スキルの共有リンクをバックアップに退避します。個人作成の同名ディレクトリや無関係なリンクは保持します。

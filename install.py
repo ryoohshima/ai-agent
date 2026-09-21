@@ -95,22 +95,6 @@ def install(home, dry=False):
         if (home / name).is_symlink():
             raise ValueError(f"{home / name} is a directory symlink; migrate its runtime data first")
 
-    for source, target in [
-        ("shared/AGENTS.md", ".agents/AGENTS.md"),
-        ("shared/AGENTS.md", ".agents/instructions.md"),  # Compatibility for existing entry points.
-        ("claude/CLAUDE.md", ".claude/CLAUDE.md"),
-        ("claude/RTK.md", ".claude/RTK.md"),
-        ("claude/settings.json", ".claude/settings.json"),
-        ("shared/mcp-servers.json", ".claude/mcp-servers.json"),
-        ("claude/statusline.sh", ".claude/statusline.sh"),
-        ("codex/AGENTS.md", ".codex/AGENTS.md"),
-    ]:
-        link(REPO / source, home / target)
-    for path in sorted((REPO / "shared/rules").glob("*.md")):
-        link(path, home / ".agents/rules" / path.name)
-        link(path, home / ".claude/rules" / path.name)
-    for path in sorted((REPO / "codex/rules").glob("*.rules")):
-        link(path, home / ".codex/rules" / path.name)
     # Retired shared skills: preserve custom directories and unrelated links.
     for name in ("write-a-skill", "coding-standards"):
         for folder in (".agents/skills", ".claude/skills", ".codex/skills"):
@@ -119,39 +103,33 @@ def install(home, dry=False):
                 print(f"backup retired skill link: {target}")
                 if not dry:
                     save(target, move=True)
-    for folder, targets in [
-        ("shared/hooks", (".agents/hooks", ".claude/hooks")),
-        ("claude/hooks", (".claude/hooks",)),
-    ]:
-        for path in sorted((REPO / folder).iterdir()):
-            for target in targets:
-                link(path, home / target / path.name)
-    for path in sorted((REPO / "shared/skills").iterdir()):
-        if not (path / "SKILL.md").is_file():
-            continue
-        for target in (".agents/skills", ".claude/skills"):
-            link(path, home / target / path.name)
-        legacy = home / ".codex/skills" / path.name
-        if legacy.exists() or legacy.is_symlink():
-            print(f"backup duplicate skill: {legacy}")
-            if not dry:
-                save(legacy, move=True)
+
+    # These files are merged or installed at a different destination below.
+    special = {REPO / "codex/config.toml", REPO / "codex/hooks.json", REPO / "shared/mcp-servers.json"}
+
+    def link_tree(source, target):
+        paths = sorted(source.iterdir())
+        ignored = shutil.ignore_patterns(".*", "*.bak", "*~", "__pycache__", "*.pyc")(source, [p.name for p in paths])
+        for path in paths:
+            if path in special or path.name in ignored:
+                continue
+            if path.is_dir() and not (path / "SKILL.md").is_file():
+                link_tree(path, target / path.name)
+            else:
+                link(path, target / path.name)
+
+    for source, target in (("shared", ".agents"), ("claude", ".claude"), ("codex", ".codex")):
+        link_tree(REPO / source, home / target)
+    for folder in ("rules", "skills", "hooks"):
+        link_tree(REPO / "shared" / folder, home / ".claude" / folder)
+    link(REPO / "shared/mcp-servers.json", home / ".claude/mcp-servers.json")
+    link(REPO / "shared/AGENTS.md", home / ".agents/instructions.md")  # Compatibility.
 
     write(config_path, merged)
 
     if not claude_path.exists() or claude != json.loads(claude_path.read_text()):
         write(claude_path, json.dumps(claude, indent=2, ensure_ascii=False) + "\n")
 
-    # Migrate the two legacy sound hooks to config.toml's notify setting.
-    for group in hooks.get("hooks", {}).get("Stop", []):
-        group["hooks"] = [hook for hook in group.get("hooks", []) if hook.get("command") not in (
-            "afplay /System/Library/Sounds/Frog.aiff",
-            "afplay /System/Library/Sounds/Frog.aiff 2>/dev/null || :",
-        )]
-    if "Stop" in hooks.get("hooks", {}):
-        hooks["hooks"]["Stop"] = [group for group in hooks["hooks"]["Stop"] if group["hooks"]]
-        if not hooks["hooks"]["Stop"]:
-            del hooks["hooks"]["Stop"]
     for event, groups in hook_defaults.items():
         current = hooks.setdefault("hooks", {}).setdefault(event, [])
         for group in groups:
