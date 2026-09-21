@@ -1,6 +1,6 @@
 # Codex ユーザー設定
 
-作業開始時に `~/.agents/instructions.md` を読み、共通のユーザー指示として適用する。
+作業開始時に `~/.agents/AGENTS.md` を読み、共通のユーザー指示として適用する。
 参照ファイルはシンボリックリンク先の最新内容を読む。
 
 Claude Code 固有のモデル名・ツール名・frontmatter の権限指定は Codex の設定値として使わない。

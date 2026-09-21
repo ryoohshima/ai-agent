@@ -3,3 +3,4 @@ project_doc_fallback_filenames = ["CLAUDE.md"]
 sandbox_mode = "workspace-write"
 approval_policy = "on-request"
 approvals_reviewer = "auto_review"
+notify = ["bash", "-lc", "afplay /System/Library/Sounds/Bottle.aiff"]

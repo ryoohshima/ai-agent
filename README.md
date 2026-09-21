@@ -4,7 +4,7 @@ Claude Code と Codex の個人設定を管理するリポジトリ。旧 `claud
 
 ```text
 shared/
-  instructions.md       日本語・人格・開発方針・CodeGraph の共通指示
+  AGENTS.md             日本語・人格・開発方針・CodeGraph の共通指示
   rules/                コーディング・Git ガイドライン
   skills/               両エージェントで使うスキル
   hooks/                lessons.md の読み込み・更新リマインダー
@@ -41,7 +41,9 @@ uv run --no-project --with-requirements requirements.txt python3 test_install.py
 - Claude の設定は `claude/` を編集します。マシン固有の上書きは Git 管理外の `~/.claude/settings.local.json` に置きます。
 - MCP は両エージェントとも `shared/mcp-servers.json` を正とし、`./install.sh` で同名サーバーの定義全体を上書きします。定義内で削除した項目も反映します。リポジトリにないサーバーは保持するため、サーバー自体を削除する場合はローカル設定からも削除します。認証情報はリポジトリに含めません。
 - Codex のモデル・アプリ連携など MCP 以外の既存設定は保持します。`codex/config.toml` は未設定項目だけを補う初期値です。
-- 共通の個人指示は `shared/instructions.md` を正本とし、Claude の `CLAUDE.md` と Codex の `AGENTS.md` が同じ `~/.agents/instructions.md` を読みます。各入口には固有指示だけを置き、開発・Git の詳細ルールは共通指示から必要時に読みます。変更は既存リンク経由で反映され、新しいセッションで読み込まれます。
+- 共通の個人指示は `shared/AGENTS.md` を正本とし、Claude の `CLAUDE.md` と Codex の `AGENTS.md` が同じ `~/.agents/AGENTS.md` を読みます。各入口には固有指示だけを置き、開発・Git の詳細ルールは共通指示から必要時に読みます。変更は既存リンク経由で反映され、新しいセッションで読み込まれます。
+- Claude は `@~/.agents/AGENTS.md` で共通指示を import し、その下に Claude 固有指示を置きます。`~/.agents/AGENTS.md` は自動探索に頼らず各入口から明示的に読み込みます。旧 `~/.agents/instructions.md` は既存の参照向けに同じ正本への互換リンクとして残します。既存環境でこの改名を取り込んだら、新しいセッションを開始する前に `./install.sh` を再実行してリンクを更新してください。
+- 完了音は `codex/config.toml` の `notify` で設定します。インストーラーは旧 Frog 通知の Stop フック 2 種類だけを削除し、他のフックと既存の `notify` は保持します。
 - `codex/hooks.json` はインストール時に既存フックへ重複なく追記します。定義を変更・削除した場合は `~/.codex/hooks.json` の古い定義も調整します。新しいフックは Codex CLI の `/hooks` で確認・信頼してください。既存の Orca / Superset 連携は保持します。
 - 新しいスキル・ルール・フックスクリプトの追加後は `./install.sh` を再実行します。アプリ管理の `computer-use` / `orchestration` / `orca-cli` やプラグインは各アプリ側で管理します。
 
@@ -54,8 +56,12 @@ Codex の既存インポート設定は保持しますが、共通ファイル�
 - モデル名、権限、ステータスライン、プラグインは各エージェント固有です。Claude の設定ファイルをそのまま Codex へは渡しません。
 - Codex はプロジェクトに `AGENTS.md` がなければ `CLAUDE.md` を読みます。両方ある場合は `AGENTS.md` が優先されます。
 - Claude のコマンド deny/ask を Codex の `.rules` に移植しています。Codex のルールはサンドボックス外での実行を制御するもので、Claude の権限モデルと完全に同じではありません。`.env` の読み取り禁止は共通指示に記載していますが、ファイルアクセス制御と同義ではありません。
-- Codex に lessons のリマインダーと完了音を追加しています。Claude の Notification、RTK 自動書き換え、独自ステータスラインは Claude 側に残します。
+- Codex に lessons のリマインダーと `notify` による完了音（Bottle.aiff）を追加しています。Claude の Notification、RTK 自動書き換え、独自ステータスラインは Claude 側に残します。
 - 共通スキルの補助スクリプトは明示実行に統一しています。Claude 専用 frontmatter のモデル・ツール指定は Codex に適用しません。
+
+## Codex のセキュリティレビュー
+
+OpenAI 公式の `security-best-practices` を `~/.codex/skills/` に導入しています。Python・JavaScript/TypeScript・Go の安全な実装や明示的なレビュー依頼で使うスキルで、Claude の `security-guidance` の自動フックとは実行方式が異なります。新しい環境では Skill Installer に `openai/skills` の `skills/.curated/security-best-practices` を指定して導入してください。
 
 ## ローカルデータと復元
 
@@ -71,3 +77,4 @@ Codex の既存インポート設定は保持しますが、共通ファイル�
 - [AGENTS.md とフォールバック](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
 - [Codex フックの信頼確認](https://learn.chatgpt.com/docs/hooks)
 - [Codex の実行ルール](https://learn.chatgpt.com/docs/agent-configuration/rules)
+- [Claude の共通指示 import と固有指示](https://code.claude.com/docs/en/memory#share-one-file-with-other-coding-tools)

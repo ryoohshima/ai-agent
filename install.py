@@ -96,7 +96,8 @@ def install(home, dry=False):
             raise ValueError(f"{home / name} is a directory symlink; migrate its runtime data first")
 
     for source, target in [
-        ("shared/instructions.md", ".agents/instructions.md"),
+        ("shared/AGENTS.md", ".agents/AGENTS.md"),
+        ("shared/AGENTS.md", ".agents/instructions.md"),  # Compatibility for existing entry points.
         ("claude/CLAUDE.md", ".claude/CLAUDE.md"),
         ("claude/RTK.md", ".claude/RTK.md"),
         ("claude/settings.json", ".claude/settings.json"),
@@ -133,6 +134,16 @@ def install(home, dry=False):
     if not claude_path.exists() or claude != json.loads(claude_path.read_text()):
         write(claude_path, json.dumps(claude, indent=2, ensure_ascii=False) + "\n")
 
+    # Migrate the two legacy sound hooks to config.toml's notify setting.
+    for group in hooks.get("hooks", {}).get("Stop", []):
+        group["hooks"] = [hook for hook in group.get("hooks", []) if hook.get("command") not in (
+            "afplay /System/Library/Sounds/Frog.aiff",
+            "afplay /System/Library/Sounds/Frog.aiff 2>/dev/null || :",
+        )]
+    if "Stop" in hooks.get("hooks", {}):
+        hooks["hooks"]["Stop"] = [group for group in hooks["hooks"]["Stop"] if group["hooks"]]
+        if not hooks["hooks"]["Stop"]:
+            del hooks["hooks"]["Stop"]
     for event, groups in hook_defaults.items():
         current = hooks.setdefault("hooks", {}).setdefault(event, [])
         for group in groups:
